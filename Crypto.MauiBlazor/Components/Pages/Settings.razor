@@ -1,0 +1,113 @@
+﻿@page "/settings"
+@inject NavigationManager NavigationManager
+@inject SettingsService SettingsService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudPaper Elevation="8" Class="pa-4">
+        <MudText Typo="Typo.h5" Class="mb-4">Manage KDA Wallet Addresses</MudText>
+
+        @foreach (var wAddress in walletAddresses)
+        {
+            <MudGrid Spacing="3" AlignItems="Center" Class="mb-4">
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="wAddress.Name" Label="Name" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="wAddress.Address" Label="KDA Wallet Address" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => walletAddresses.Remove(wAddress))" />
+                </MudItem>
+            </MudGrid>
+        }
+
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="AddWallet" Class="mb-2">
+            Add New Wallet Address
+        </MudButton>
+
+        <MudDivider Class="mb-4" />
+
+        <MudText Typo="Typo.h5" Class="mb-4">Binance API Settings</MudText>
+
+        <MudGrid Spacing="3" AlignItems="Center" Class="mb-4">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="binanceApiInfo.Key" Label="API Key" Required="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="binanceApiInfo.Secret" Label="API Secret" Required="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="mb-4" />
+
+        <MudText Typo="Typo.h5" Class="mb-4">Coin Market Cap API Settings</MudText>
+
+        <MudGrid Spacing="3" AlignItems="Center" Class="mb-4">
+            <MudItem xs="12">
+                <MudTextField @bind-Value="coinMarketApiKey" Label="API Key" Required="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="mb-4" />
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSettings">
+            Save
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<KdaAddress> walletAddresses = new List<KdaAddress>();
+    private BinanceApiInfo binanceApiInfo = new BinanceApiInfo();
+    private string coinMarketApiKey;
+    private string password;
+
+    protected override async Task OnInitializedAsync()
+    {
+        password = ((App)Application.Current).CurrentPassword;
+        if (string.IsNullOrEmpty(password))
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            var settings = await SettingsService.LoadSettingsAsync(password);
+            walletAddresses = settings?.KdaWalletAddresses ?? new List<KdaAddress>();
+            binanceApiInfo = settings?.Binance ?? new BinanceApiInfo();
+            coinMarketApiKey = settings?.CoinMarketApiKey ?? string.Empty;
+        }
+    }
+
+    private void AddWallet()
+    {
+        walletAddresses.Add(new KdaAddress());
+    }
+
+    private void RemoveWallet(int index)
+    {
+        walletAddresses.RemoveAt(index);
+    }
+
+    private async Task SaveSettings()
+    {
+        var validWallets = walletAddresses
+            .Where(w => !string.IsNullOrWhiteSpace(w.Address) && !string.IsNullOrWhiteSpace(w.Name))
+            .Select(w => new KdaAddress { Address = w.Address.Trim(), Name = w.Name.Trim() })
+            .ToList();
+
+        var settings = new AppSettings
+            {
+                KdaWalletAddresses = validWallets,
+                Binance = new BinanceApiInfo
+                {
+                    Key = binanceApiInfo.Key?.Trim(),
+                    Secret = binanceApiInfo.Secret?.Trim()
+                },
+                CoinMarketApiKey = coinMarketApiKey?.Trim()
+            };
+
+        await SettingsService.SaveSettingsAsync(settings, password);
+        Snackbar.Add("Settings saved successfully.", Severity.Success);
+    }
+}

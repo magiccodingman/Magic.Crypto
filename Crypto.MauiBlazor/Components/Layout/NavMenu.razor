@@ -1,0 +1,67 @@
+﻿<style>
+    .side-nav-item > a[aria-expanded=true] > span.menu-arrow {
+        -webkit-transform: rotate( 90deg);
+        transform: rotate( 90deg);
+    }
+</style>
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+
+
+        <MudDivider Class="my-2" Vertical="true" FlexItem="true" Style="height: 60%" />
+
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="@open" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h5"><b>VIM</b></MudText>
+            <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Crypto Magic</MudText>
+            @*<MudImage Class="my-2 mx-auto d-block" Src="code-assets/images/logo-vim.png" Alt="VIM Logo" Elevation="25" Height="30" Width="102" />*@
+        </MudDrawerHeader>
+
+        <MudNavMenu Class="mud-width-full pa-2" Dense="true" Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+            <MudNavLink Href="@($"./")" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Primary">Dashboard</MudNavLink>
+
+            <MudNavLink Href="./kdawallet" Icon="@kadenaKdaLogoSvg" IconColor="Color.Primary">Kda Wallet</MudNavLink>
+
+            <MudNavLink Href="./settings" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary">Settings</MudNavLink>
+
+        </MudNavMenu>
+    </MudDrawer>
+    <!-- Left SideNav END -->
+
+
+
+
+</MudLayout>
+
+
+@code {
+    bool open = false;
+
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+
+    private async void HandleLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        // Always close the drawer on location change
+        open = false;
+        StateHasChanged();
+    }
+
+    //private string kadenaKdaLogoSvg;
+
+    private const string kadenaKdaLogoSvg = @"<svg xmlns=""http://www.w3.org/2000/svg"" xml:space=""preserve"" id=""Layer_1"" x=""0"" y=""0"" style=""enable-background:new 0 0 324.6 312.4"" version=""1.1"" viewBox=""0 0 324.6 312.4""><style>.st0{fill:#4a9079}</style><path d=""M324.6 312.4H211.4l-.1-.1-.9-.7L70.3 202.2l57.4-46 196 155.4.9.8zM324.6 0H211.4l-.1.1-.9.7L70.3 110.2l57.4 46L323.7.8l.9-.8z"" class=""st0""/><path d=""M70.3 163.1v149.2l-.1-.1-.9-.7-68.1-53.8-.2-.1-1-.8V55.6l1-.8.2-.1L69.4.7l.9-.7v163.1z"" class=""st0""/></svg>";
+
+    [Inject] protected NavigationManager UriHelper { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        UriHelper.LocationChanged += HandleLocationChanged;
+       
+    }
+}

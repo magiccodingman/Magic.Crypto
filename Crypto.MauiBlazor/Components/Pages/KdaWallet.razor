@@ -1,0 +1,251 @@
+﻿@page "/kdawallet"
+@inject CryptoService _CryptoService
+@inject SettingsService SettingsService
+@inject CoinMarketCapService CoinMarketCapService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudPaper Elevation="8" Class="pa-4">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <MudText Typo="Typo.h5" Class="mb-4">KDA Wallet Balances</MudText>
+            <div style="display:flex; align-items:center;">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshNow" />
+                <MudText Typo="Typo.body2" Class="ml-2">Last refreshed: @lastRefreshTime.ToShortTimeString()</MudText>
+                <MudText Typo="Typo.body2" Class="ml-2">Next refresh in: @nextRefreshCountdown seconds</MudText>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        }
+        else if (!walletAddresses.Any())
+        {
+            <MudText Typo="Typo.body1">No KDA addresses found in settings.</MudText>
+        }
+        else
+        {
+            <div style="padding-bottom:10px">
+                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(totalBalance))"
+                              Label="Total Coins" Variant="Variant.Outlined" Adornment="Adornment.Start"
+                              AdornmentIcon="@kadenaKdaLogoSvg"
+                              ReadOnly="true" />
+            </div>
+            <div style="padding-bottom:10px">
+                @*  <MudText Typo="Typo.h6" Class="mb-4">Total Worth: @($"$")totalBalance</MudText> *@
+                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(totalBalance*KdaUsdPrice))"
+                              Label="Total Worth" Variant="Variant.Outlined" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.AttachMoney" AdornmentColor="Color.Warning"
+                              ReadOnly="true" />
+            </div>
+            <div style="padding-bottom:10px">
+                @*  <MudText Typo="Typo.h6" Class="mb-4">Total Worth: @($"$")totalBalance</MudText> *@
+                <MudTextField Typo="Typo.body1" Value="@(FormatNumberWithCommas(KdaUsdPrice))"
+                              Label="KDA Current Value" Variant="Variant.Outlined" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.AttachMoney" AdornmentColor="Color.Warning"
+                              ReadOnly="true" />
+            </div>
+            <MudTabs Outlined="true" Position="@Position.Left" Rounded="true" Border="true"
+                     ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
+
+                @foreach (var wallet in walletBalances)
+                {
+
+                    <MudTabPanel Text="@walletAddresses?.FirstOrDefault(x => x.Address == wallet.Address)?.Name">
+                        <MudPaper Class="pa-4 mb-4">
+                            <MudText Typo="Typo.body1" Class="mb-2">Wallet: @wallet.Address</MudText>
+                            <MudTextField Typo="Typo.body1" Value="@(FormatNumberWithCommas(wallet.TotalBalance))"
+                                          Label="Total Wallet Balance" Variant="Variant.Outlined" Adornment="Adornment.Start"
+                                          AdornmentIcon="@kadenaKdaLogoSvg"
+                                          ReadOnly="true" />
+                            @* <MudText Typo="Typo.subtitle1">Total Wallet Balance: @wallet.TotalBalance</MudText> *@
+                            <MudTable Items="wallet.Balances" Dense="true">
+                                <HeaderContent>
+                                    <MudTh>Chain</MudTh>
+                                    <MudTh>Balance</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Chain">@context.ChainId</MudTd>
+                                    <MudTd DataLabel="Balance">@context.Balance</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudPaper>
+                    </MudTabPanel>
+
+
+                }
+
+                @if (Binance == true)
+                {
+                    <MudTabPanel Text="Binance API">
+                        <MudPaper Class="pa-4 mb-4">
+                            <MudTextField Typo="Typo.body1" Value="@(FormatNumberWithCommas(BinanceKdaWallet))"
+                                          Label="Total Wallet Balance" Variant="Variant.Outlined" Adornment="Adornment.Start"
+                                          AdornmentIcon="@kadenaKdaLogoSvg"
+                                          ReadOnly="true" />
+                            @*  <MudText Typo="Typo.subtitle1">Total Wallet Balance: @BinanceKdaWallet</MudText> *@
+                        </MudPaper>
+                    </MudTabPanel>
+                }
+            </MudTabs>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private const string kadenaKdaLogoSvg = @"<svg xmlns=""http://www.w3.org/2000/svg"" xml:space=""preserve"" id=""Layer_1"" x=""0"" y=""0"" style=""enable-background:new 0 0 324.6 312.4"" version=""1.1"" viewBox=""0 0 324.6 312.4""><style>.st0{fill:#4a9079}</style><path d=""M324.6 312.4H211.4l-.1-.1-.9-.7L70.3 202.2l57.4-46 196 155.4.9.8zM324.6 0H211.4l-.1.1-.9.7L70.3 110.2l57.4 46L323.7.8l.9-.8z"" class=""st0""/><path d=""M70.3 163.1v149.2l-.1-.1-.9-.7-68.1-53.8-.2-.1-1-.8V55.6l1-.8.2-.1L69.4.7l.9-.7v163.1z"" class=""st0""/></svg>";
+
+    public string FormatNumberWithCommas(double number)
+    {
+        return number.ToString("#,##0.####");
+    }
+
+    private List<KdaAddress> walletAddresses = new List<KdaAddress>();
+    private List<KdaChainBalance> balances = new List<KdaChainBalance>();
+    private List<WalletBalance> walletBalances = new List<WalletBalance>();
+    private double totalBalance = 0;
+    private string password;
+    private bool isLoading = true;
+    private DateTime lastRefreshTime;
+    private int nextRefreshCountdown;
+
+    private readonly int AutoRefreshSeconds = 300;
+
+    private bool Binance { get; set; } = true;
+    private double BinanceKdaWallet { get; set; }
+
+    //private CoinMarketCapResponse cryptoData { get; set; }
+    private double KdaUsdPrice { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Refresh();
+        isLoading = false;
+        lastRefreshTime = DateTime.Now;
+        StartCountdown();
+        _ = PeriodicRefresh();
+    }
+
+    public async Task Refresh()
+    {
+
+        password = ((App)Application.Current).CurrentPassword;
+
+        AppSettings settings = await SettingsService.LoadSettingsAsync(password);
+        walletAddresses = settings?.KdaWalletAddresses ?? new List<KdaAddress>();
+
+        if (settings != null && !string.IsNullOrWhiteSpace(settings.CoinMarketApiKey))
+        {
+            var cryptoData = await CoinMarketCapService.GetCryptoUsdListAsync(settings.CoinMarketApiKey);
+
+            KdaUsdPrice = cryptoData.Data.FirstOrDefault(x => x.Symbol == "KDA")?.Quote?.FirstOrDefault().Value?.Price??0;
+        }
+
+        if (walletAddresses.Any())
+        {
+            List<KdaChainBalance> tmp_Balances = new List<KdaChainBalance>();
+            List<WalletBalance> tmp_walletBalances = new List<WalletBalance>();
+            double tempTotalBalance = 0;
+            foreach (var wallet in walletAddresses)
+            {
+                var walletBalancesList = await _CryptoService.GetBalancesAsync(wallet.Address);
+                if (walletBalancesList != null && walletBalancesList.Any())
+                {
+                    tmp_Balances.AddRange(walletBalancesList);
+                    double walletTotal = walletBalancesList.Sum(b => b.Balance);
+                    tempTotalBalance += walletTotal;
+                    tmp_walletBalances.Add(new WalletBalance
+                        {
+                            Address = wallet.Address,
+                            Balances = walletBalancesList,
+                            TotalBalance = walletTotal
+                        });
+                }
+            }
+            totalBalance = tempTotalBalance;
+            walletBalances = tmp_walletBalances;
+            balances = tmp_Balances;
+        }
+
+        if (settings.Binance != null
+            && !string.IsNullOrWhiteSpace(settings.Binance.Key)
+            && !string.IsNullOrWhiteSpace(settings.Binance.Secret))
+        {
+            BinanceKdaWallet = await GetKdaAmountAsync(settings.Binance.Key, settings.Binance.Secret);
+            totalBalance += BinanceKdaWallet;
+            Binance = true;
+        }
+        
+        lastRefreshTime = DateTime.Now;
+        nextRefreshCountdown = AutoRefreshSeconds;
+    }
+
+
+
+    public async Task<double> GetKdaAmountAsync(string apiKey, string apiSecret)
+    {
+        var binanceApi = new BinanceApi(apiKey, apiSecret);
+        var accountInfo = await binanceApi.GetAccountInfoAsync();
+
+        var kdaBalance = accountInfo["balances"]
+            .FirstOrDefault(b => b["asset"].ToString() == "KDA")?["free"]
+            .ToObject<double>() ?? 0;
+
+        return kdaBalance;
+    }
+
+    private async Task PeriodicRefresh()
+    {
+        while (true)
+        {
+            await Task.Delay(1000);
+            nextRefreshCountdown--;
+            if (nextRefreshCountdown <= 0)
+            {
+                await Refresh();
+                nextRefreshCountdown = AutoRefreshSeconds;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void StartCountdown()
+    {
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await Task.Delay(1000);
+                nextRefreshCountdown--;
+                if (nextRefreshCountdown <= 0)
+                {
+                    nextRefreshCountdown = AutoRefreshSeconds;
+                }
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task RefreshNow()
+    {
+        int minSecondsBetweenRefreshes = 10;
+        var timeSinceLastRefresh = (DateTime.Now - lastRefreshTime).TotalSeconds;
+        if (timeSinceLastRefresh < minSecondsBetweenRefreshes)
+        {
+            int waitTime = minSecondsBetweenRefreshes - (int)timeSinceLastRefresh;
+            Snackbar.Add($"Refresh was too soon. Please wait {waitTime} more seconds.", Severity.Warning);
+            return;
+        }
+
+        await Refresh();
+        nextRefreshCountdown = AutoRefreshSeconds;
+        StateHasChanged();
+    }
+
+    private class WalletBalance
+    {
+        public string Address { get; set; }
+        public List<KdaChainBalance> Balances { get; set; }
+        public double TotalBalance { get; set; }
+    }
+}

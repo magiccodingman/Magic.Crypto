@@ -1,0 +1,46 @@
+﻿@inherits LayoutComponentBase
+@inject SettingsService SettingsService
+@inject NavigationManager NavigationManager
+
+<CascadingValue Name="Layout" Value="this">
+
+    <MudThemeProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+    <MudHighlighter />
+    <body>
+
+
+        @if (!string.IsNullOrEmpty(((App)Application.Current).CurrentPassword))
+        {
+            <NavMenu />
+        }
+        <article id="ArticleId" class="content" style="padding-top:75px;">
+            <MudContainer Class="p-0" MaxWidth="MudBlazor.MaxWidth.Large">
+                <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+                @Body
+            </MudContainer>
+        </article>
+    </body>
+</CascadingValue>
+@code {
+
+    private MudTheme _theme = new();
+    private bool _isDarkMode = true;
+
+    private AppSettings settings;
+    private string password;
+
+    protected override async Task OnInitializedAsync()
+    {
+        password = ((App)Application.Current).CurrentPassword;
+        if (!string.IsNullOrEmpty(password))
+        {
+            settings = await SettingsService.LoadSettingsAsync(password);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+}

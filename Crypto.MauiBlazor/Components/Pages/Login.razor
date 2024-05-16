@@ -1,0 +1,137 @@
+﻿@page "/login"
+@inject NavigationManager NavigationManager
+@inject SettingsService SettingsService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-6">
+    <MudPaper Elevation="8" Class="pa-4">
+        <MudText Typo="Typo.h5" Class="mb-4">@(isNewPassword ? "Create Password" : "Enter Password")</MudText>
+        <MudTextField @bind-Value="Password" Label="Password" InputType="InputType.Password"
+                      Required="true" Class="mb-4" OnKeyUp="Enter" />
+        @if (isNewPassword)
+        {
+            <MudTextField @bind-Value="ConfirmPassword" Label="Confirm Password"
+                          InputType="InputType.Password" Required="true" Class="mb-4" OnKeyUp="Enter" />
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Disabled="@isLoading">
+            @if (isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else
+            {
+                @("Submit")
+            }
+
+            @* <MudPaper Elevation="4" Class="p-4">
+                <MudText Typo="Typo.h6" Color="Color.Error">
+                    Important! Please Read
+                </MudText>
+                <MudDivider Class="mb-4" />
+                <MudText Typo="Typo.body1">
+                    Your password is crucial for securing your data. All sensitive information is encrypted at rest using your password. Please ensure your password meets the following criteria:
+                </MudText>
+                <MudList Dense="true" Class="my-2">
+                    <MudListItem>Minimum 16 characters</MudListItem>
+                    <MudListItem>Includes upper and lower case letters</MudListItem>
+                    <MudListItem>Includes numbers and special characters</MudListItem>
+                </MudList>
+                <MudText Typo="Typo.body1">
+                    If you lose your password, there is no recovery system. You can reset it from the login screen, but this will delete all your data. Future versions will allow safe password resets from the settings page without data loss, but only if you know your current password. Do not use a password you use elsewhere and store it securely.
+                </MudText>
+                <MudAlert Severity="Severity.Warning" Elevation="0" Class="mt-4">
+                    Your password is saved as a hash. We cannot retrieve it, even if you ask.
+                </MudAlert>
+            </MudPaper> *@
+
+        </MudButton>
+        <br />
+        <br />
+        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ShowResetPasswordDialog" Class="mt-2">
+            Reset Password
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string Password { get; set; }
+    private string ConfirmPassword { get; set; }
+    private bool isNewPassword;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await SettingsService.GetStoredHash();
+        if (string.IsNullOrWhiteSpace(hash))
+            isNewPassword = true;
+        else
+            isNewPassword = false;
+    }
+
+    private async Task Submit()
+    {
+        isLoading = true;
+
+        if (isNewPassword)
+        {
+            if (Password != ConfirmPassword)
+            {
+                // Show error message
+                Snackbar.Add("Passwords do not match. Please try again.", Severity.Error);
+                isLoading = false;
+                return;
+            }
+            await SettingsService.SavePasswordHashAsync(Password);
+        }
+        else
+        {
+            if (!await SettingsService.VerifyPasswordAsync(Password))
+            {
+                // Show error message
+                Snackbar.Add("Incorrect password. Please try again.", Severity.Error);
+                isLoading = false;
+                return;
+            }
+        }
+
+        // Save password in session or memory
+        ((App)Application.Current).CurrentPassword = Password;
+
+        // Navigate to the default page
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task ShowResetPasswordDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            {"ContentText", "This will delete your saved settings and encrypted data. Do you want to proceed?"}
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<Crypto.MauiBlazor.Components.Shared.ConfirmResetPasswordDialog>("Reset Password", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await ResetPassword();
+        }
+    }
+
+    private async Task ResetPassword()
+    {
+        await SettingsService.DeleteSettingsAsync();
+        Snackbar.Add("Password reset successfully. Please create a new password.", Severity.Success);
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await Submit();
+        }
+    }
+
+}
