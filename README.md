@@ -7,8 +7,6 @@ Welcome to **Magic Crypto Blazor**! This repository contains two projects within
 
 These projects aim to make blockchain API calls easier to utilize within C# and Blazor applications. While most blockchain APIs and libraries use JavaScript, this project integrates these JavaScript libraries to be more accessible in C# Blazor environments. The **Crypto.MauiBlazor.Wallet** project is a secure way for users to track their crypto through open-source, easily changeable code.
 
-## Projects Overview
-
 ## Crypto.Blazor.Core
 
 **Crypto.Blazor.Core** is a C# Razor library for Blazor projects, currently supporting Kadena with limited functionality. The primary goal is to utilize the [pact-lang-api](https://www.npmjs.com/package/pact-lang-api) JavaScript library, the official JS library created by the Kadena development team, without rewriting it in C#. This approach ensures easy updates and maintenance by leveraging the official Kadena library.
