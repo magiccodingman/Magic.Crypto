@@ -65,6 +65,40 @@ export async function getChainBalanceResponse(server, nv, acctName, chainId) {
 
     return response.result;
 }
+
+export async function getBalanceResponse(server, acctName) {
+    try {
+        const info = await getVersion(server);
+        const creationTime = () => Math.round(new Date().getTime() / 1000);
+        const host = `https://${server}/chainweb/0.0/${info.nv}/chain/0/pact`;
+
+        const cmd = {
+            pactCode: `(coin.get-balance "${acctName}")`,
+            meta: {
+                creationTime: creationTime(),
+                ttl: 600,
+                gasLimit: 600,
+                chainId: "0",
+                gasPrice: 0.0000001,
+                sender: acctName,
+            },
+        };
+
+        const response = await Pact.fetch.local(cmd, host);
+        const result = response.result;
+
+        let balance = 0;
+        if (result && result.data) {
+            balance = typeof result.data === "number" ? result.data : (result.data.decimal ? result.data.decimal : 0);
+        }
+
+        return { Account: acctName, Balance: balance };
+    } catch (e) {
+        console.log(e);
+        throw new Error("Unable to fetch balance for " + JSON.stringify(acctName));
+    }
+}
+
 export async function getBalance(server, token, acctName) {
 
     const chainBal = {};

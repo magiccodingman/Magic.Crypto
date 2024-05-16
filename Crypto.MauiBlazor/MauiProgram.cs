@@ -19,9 +19,10 @@ namespace Crypto.MauiBlazor
 
             builder.Services.AddMauiBlazorWebView();
 
-            builder.Services.AddScoped<CryptoService>();
-            builder.Services.AddSingleton<SettingsService>();
+            MagicCryptoServiceConfig.Configure(builder.Services);
             builder.Services.AddSingleton(new CoinMarketCapService(Path.Combine(AppContext.BaseDirectory, "coinmarketcap_data.json")));
+            builder.Services.AddSingleton<SettingsService>();
+            
             builder.Services.AddMudServices();
 
 #if DEBUG

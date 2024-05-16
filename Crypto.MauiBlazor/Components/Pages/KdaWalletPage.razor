@@ -1,4 +1,5 @@
 ﻿@page "/kdawallet"
+@using System.Diagnostics
 @inject CryptoService _CryptoService
 @inject SettingsService SettingsService
 @inject CoinMarketCapService CoinMarketCapService
@@ -26,14 +27,14 @@
         else
         {
             <div style="padding-bottom:10px">
-                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(totalBalance))"
+                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(GetTotalBalance()))"
                               Label="Total Coins" Variant="Variant.Outlined" Adornment="Adornment.Start"
                               AdornmentIcon="@kadenaKdaLogoSvg"
                               ReadOnly="true" />
             </div>
             <div style="padding-bottom:10px">
                 @*  <MudText Typo="Typo.h6" Class="mb-4">Total Worth: @($"$")totalBalance</MudText> *@
-                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(totalBalance*KdaUsdPrice))"
+                <MudTextField Typo="Typo.h6" Value="@(FormatNumberWithCommas(GetTotalBalance()*KdaUsdPrice))"
                               Label="Total Worth" Variant="Variant.Outlined" Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.AttachMoney" AdornmentColor="Color.Warning"
                               ReadOnly="true" />
@@ -48,7 +49,7 @@
             <MudTabs Outlined="true" Position="@Position.Left" Rounded="true" Border="true"
                      ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
 
-                @foreach (var wallet in walletBalances)
+                @foreach (var wallet in Wallets)
                 {
 
                     <MudTabPanel Text="@walletAddresses?.FirstOrDefault(x => x.Address == wallet.Address)?.Name">
@@ -59,7 +60,7 @@
                                           AdornmentIcon="@kadenaKdaLogoSvg"
                                           ReadOnly="true" />
                             @* <MudText Typo="Typo.subtitle1">Total Wallet Balance: @wallet.TotalBalance</MudText> *@
-                            <MudTable Items="wallet.Balances" Dense="true">
+                            <MudTable Items="wallet.ChainBalances" Dense="true">
                                 <HeaderContent>
                                     <MudTh>Chain</MudTh>
                                     <MudTh>Balance</MudTh>
@@ -101,9 +102,7 @@
     }
 
     private List<KdaAddress> walletAddresses = new List<KdaAddress>();
-    private List<KdaChainBalance> balances = new List<KdaChainBalance>();
-    private List<WalletBalance> walletBalances = new List<WalletBalance>();
-    private double totalBalance = 0;
+    private List<KdaWallet> Wallets = new List<KdaWallet>();
     private string password;
     private bool isLoading = true;
     private DateTime lastRefreshTime;
@@ -114,7 +113,6 @@
     private bool Binance { get; set; } = true;
     private double BinanceKdaWallet { get; set; }
 
-    //private CoinMarketCapResponse cryptoData { get; set; }
     private double KdaUsdPrice { get; set; }
     protected override async Task OnInitializedAsync()
     {
@@ -143,28 +141,8 @@
 
         if (walletAddresses.Any())
         {
-            List<KdaChainBalance> tmp_Balances = new List<KdaChainBalance>();
-            List<WalletBalance> tmp_walletBalances = new List<WalletBalance>();
-            double tempTotalBalance = 0;
-            foreach (var wallet in walletAddresses)
-            {
-                var walletBalancesList = await _CryptoService.GetBalancesAsync(wallet.Address);
-                if (walletBalancesList != null && walletBalancesList.Any())
-                {
-                    tmp_Balances.AddRange(walletBalancesList);
-                    double walletTotal = walletBalancesList.Sum(b => b.Balance);
-                    tempTotalBalance += walletTotal;
-                    tmp_walletBalances.Add(new WalletBalance
-                        {
-                            Address = wallet.Address,
-                            Balances = walletBalancesList,
-                            TotalBalance = walletTotal
-                        });
-                }
-            }
-            totalBalance = tempTotalBalance;
-            walletBalances = tmp_walletBalances;
-            balances = tmp_Balances;
+            var addresses = walletAddresses.Select(x => x.Address);
+            Wallets = await _CryptoService.GetKdaWalletAsync(addresses);
         }
 
         if (settings.Binance != null
@@ -172,15 +150,17 @@
             && !string.IsNullOrWhiteSpace(settings.Binance.Secret))
         {
             BinanceKdaWallet = await GetKdaAmountAsync(settings.Binance.Key, settings.Binance.Secret);
-            totalBalance += BinanceKdaWallet;
             Binance = true;
         }
-        
+
         lastRefreshTime = DateTime.Now;
         nextRefreshCountdown = AutoRefreshSeconds;
     }
 
-
+    private double GetTotalBalance()
+    {
+        return Wallets.Sum(x => x.TotalBalance) + BinanceKdaWallet;
+    }
 
     public async Task<double> GetKdaAmountAsync(string apiKey, string apiSecret)
     {
@@ -240,12 +220,5 @@
         await Refresh();
         nextRefreshCountdown = AutoRefreshSeconds;
         StateHasChanged();
-    }
-
-    private class WalletBalance
-    {
-        public string Address { get; set; }
-        public List<KdaChainBalance> Balances { get; set; }
-        public double TotalBalance { get; set; }
     }
 }
