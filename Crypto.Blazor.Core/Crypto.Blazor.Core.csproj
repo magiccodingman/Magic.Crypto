@@ -4,7 +4,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Magic Crypto Blazor</Title>
+    <PackageProjectUrl>https://github.com/magiccodingman/Magic.Crypto.Blazor</PackageProjectUrl>
+    <Description>Kadena (blockchain) API calls utilizing Pact lang JS and Binance API. Currently supports KDA wallet checks across chains.</Description>
+    <PackageIcon>kda_magic_logo.png</PackageIcon>
+    <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/magiccodingman/Magic.Crypto.Blazor</RepositoryUrl>
+    <Copyright>MIT</Copyright>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="kda_magic_logo.png" />
+  </ItemGroup>
 
 
   <ItemGroup>
@@ -15,6 +27,17 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.4" />
     <PackageReference Include="MudBlazor" Version="7.0.0-preview.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="kda_magic_logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="ReadMe.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

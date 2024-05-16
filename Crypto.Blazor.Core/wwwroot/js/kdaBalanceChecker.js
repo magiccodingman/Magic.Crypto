@@ -14,7 +14,6 @@ function loadScript(src, integrity, crossOrigin) {
 export async function loadDependencies() {
     try {
         await loadScript('https://code.jquery.com/jquery-3.7.1.min.js', null, 'anonymous');
-        //await loadScript('https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js');
         await loadScript('https://cdn.jsdelivr.net/npm/pact-lang-api@4.1.2/pact-lang-api-global.min.js');
     } catch (error) {
         console.error('Error loading external libraries:', error);
@@ -53,9 +52,6 @@ export async function getVersion(server) {
 
 
 export async function getChainBalanceResponse(server, nv, acctName, chainId) {
-    /*try {*/
-    //await loadDependencies();
-    //const info = await getVersion(server);
     const host = (chainId) => `https://${server}/chainweb/0.0/${nv}/chain/${chainId}/pact`;
     const creationTime = () => Math.round((new Date).getTime() / 1000) - 15;
     const token = 'coin';
@@ -69,39 +65,7 @@ export async function getChainBalanceResponse(server, nv, acctName, chainId) {
 
     return response.result;
 }
-
-//export async function getChainBalanceResponse(server, token, acctName, chainId) {
-//    /*try {*/
-//    //await loadDependencies();
-//    const info = await getVersion(server);
-//    const host = (chainId) => `https://${server}/chainweb/0.0/${info.nv}/chain/${chainId}/pact`;
-//    const creationTime = () => Math.round((new Date).getTime() / 1000) - 15;
-
-//    const dumMeta = (chainId) => Pact.lang.mkMeta("not-real", chainId, 0.00000001, 6000, creationTime(), 600);
-//    console.log(dumMeta(chainId));
-//    const response = await Pact.fetch.local({
-//        pactCode: `(${token}.details "${acctName}")`,
-//        meta: dumMeta(chainId)
-//    }, host(chainId))
-    
-
-//    return response.result;
-//}
-
-
-
-//export async function getChains(server) {
-//    try {
-//        const info = await getVersion(server);
-//        return info.chainIds;
-//    } catch (e) {
-//        console.log(e);
-//        return [];
-//    }
-//}
-
 export async function getBalance(server, token, acctName) {
-    //await loadDependencies();
 
     const chainBal = {};
     const creationTime = () => Math.round((new Date).getTime() / 1000) - 15;

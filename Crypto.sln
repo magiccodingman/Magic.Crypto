@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crypto.MauiBlazor", "Crypto.MauiBlazor\Crypto.MauiBlazor.csproj", "{E01AF02C-BF8D-4A30-A87B-BAE84F2B0A8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crypto.MauiBlazor.Wallet", "Crypto.MauiBlazor\Crypto.MauiBlazor.Wallet.csproj", "{E01AF02C-BF8D-4A30-A87B-BAE84F2B0A8C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crypto.Blazor.Core", "Crypto.Blazor.Core\Crypto.Blazor.Core.csproj", "{6A276265-77AC-4ACF-90E3-EE572CA5BAB4}"
 EndProject
