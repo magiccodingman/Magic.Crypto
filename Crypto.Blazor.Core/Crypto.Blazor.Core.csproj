@@ -12,6 +12,7 @@
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/magiccodingman/Magic.Crypto.Blazor</RepositoryUrl>
     <Copyright>MIT</Copyright>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

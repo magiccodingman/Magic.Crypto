@@ -70,7 +70,6 @@ namespace Crypto.Blazor.Core
             return wallet;
         }
 
-
         private async Task<List<KdaChainBalance>> GetKdaAllChainBalancesAsync(string walletAddr)
         {
             var kdaVersion = await GetKdaVersion();
